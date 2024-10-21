@@ -6,12 +6,17 @@ import DeviceDetails from './components/DeviceDetails';
 import Header from './components/Header';
 import ApiSettings from './components/ApiSettings';
 import MessageList from './components/MessageList';
+import SensorMonitor from './components/SensorMonitor';
 
 export interface Device {
   product_name: string;
   device_name: string;
-  status: 'active' | 'suspended';
-  secret?: string;
+  secret: string;
+  device_status: {
+    online: boolean;
+  };
+  last_status_update: number;
+  status: string;
 }
 
 function App() {
@@ -39,9 +44,22 @@ function App() {
       setDevices(data);
       setError(null);
     } catch (error) {
-      console.error('Error fetching devices:', error);
-      setError('Failed to fetch devices. Please check your API settings and try again.');
+      console.error('获取设备列表时出错:', error);
+      setError('获取设备失败。请检查您的API设置并重试。');
     }
+  };
+
+  const handleDeviceUpdate = async () => {
+    await fetchDevices();
+    if (selectedDevice) {
+      const updatedDevice = devices.find(d => d.device_name === selectedDevice.device_name);
+      setSelectedDevice(updatedDevice || null);
+    }
+  };
+
+  const handleDeviceDelete = async () => {
+    await fetchDevices();
+    setSelectedDevice(null);
   };
 
   const renderContent = () => {
@@ -72,28 +90,27 @@ function App() {
         </div>
         <div className="md:col-span-2">
           {selectedDevice ? (
-            <DeviceDetails device={selectedDevice} apiUrl={apiUrl} onDeviceUpdated={fetchDevices} />
+            <DeviceDetails 
+              device={selectedDevice} 
+              apiUrl={apiUrl} 
+              onDeviceUpdate={handleDeviceUpdate}
+              onDeviceDelete={handleDeviceDelete}
+            />
           ) : (
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h2 className="text-xl font-semibold mb-4">IoT Hub Overview</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center">
                   <Server className="text-blue-500 mr-2" />
-                  <span>Total Devices: {devices.length}</span>
+                  <span>设备总数: {devices.length}</span>
                 </div>
                 <div className="flex items-center">
                   <Cpu className="text-green-500 mr-2" />
-                  <span>Active Devices: {devices.filter(d => d.status === 'active').length}</span>
+                  <span>已激活设备数量： {devices.filter(d => d.status === 'active').length}</span>
                 </div>
                 <div className="flex items-center">
                   <Wifi className="text-red-500 mr-2" />
-                  <span>Suspended Devices: {devices.filter(d => d.status === 'suspended').length}</span>
-                </div>
-                <div className="flex items-center">
-                  <Link to="/settings" className="text-blue-600 hover:underline">
-                    <Settings className="text-gray-500 mr-2" />
-                    <span>Hub Settings</span>
-                  </Link>
+                  <span>已禁止设备数量: {devices.filter(d => d.status === 'suspended').length}</span>
                 </div>
               </div>
             </div>
@@ -119,6 +136,7 @@ function App() {
               />
             } />
             <Route path="/messages" element={<MessageList apiUrl={apiUrl} defaultProductName={defaultProductName} />} />
+            <Route path="/sensors" element={<SensorMonitor apiUrl={apiUrl} defaultProductName={defaultProductName} />} />
           </Routes>
         </main>
       </div>
