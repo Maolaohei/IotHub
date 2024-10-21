@@ -65,7 +65,7 @@ src/
 
 2. 克隆仓库：
    ```
-   git clone https://github.com/your-username/iot-hub-management.git
+   git clone https://github.com/maolaohei/iot-hub-management.git
    ```
 
 3. 进入项目目录：
